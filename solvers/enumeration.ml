@@ -498,7 +498,7 @@ let enumerate_programs ?extraQuiet:(extraQuiet=false) ?maxFreeParameters:(maxFre
 
 
 
-let test_recursive_enumeration () =
+(* let test_recursive_enumeration () =
   let g = primitive_grammar [primitive_cons;primitive_car;primitive_cdr;primitive_is_empty;
                              primitive_empty;
                              primitive0;
@@ -513,7 +513,7 @@ let test_recursive_enumeration () =
        let t = infer_program_type empty_context [] p |> snd in
        ignore(unify empty_context t request);
     Printf.printf "%s\n" (t |> string_of_type))
-;;
+;; *)
 
 
 

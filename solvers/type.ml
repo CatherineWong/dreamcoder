@@ -259,6 +259,10 @@ let rec pad_type_with_arguments context n t =
 
 let make_ground g = TCon(g,[],false);;
 
+(** Gadgets primitives *)
+let tfloat = make_ground "tfloat";;
+let ttransmat = make_ground "ttransmat";;
+let tstroke = make_ground "tstroke";;
 
 let tint = make_ground "int";;
 let tcharacter = make_ground "char";;

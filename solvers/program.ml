@@ -356,7 +356,7 @@ let primitive_character_equal = primitive "char-upper?" (tcharacter @> tboolean)
 let primitive_character_equal = primitive "str-eq?" (tlist tcharacter @> tlist tcharacter @> tboolean) (fun x y -> x = y);;
 (* let primitive_capitalize = primitive "caseCapitalize" (tstring @> tstring) String.capitalize;;
  * let primitive_concatenate = primitive "concatenate" (tstring @> tstring @> tstring) ( ^ );; *)
-let primitive_constant_strings = [primitive "','" tcharacter ',';
+(* let primitive_constant_strings = [primitive "','" tcharacter ',';
                                   primitive "'.'" tcharacter '.';
                                   primitive "'@'" tcharacter '@';
                                   primitive "SPACE" tcharacter ' ';
@@ -393,7 +393,7 @@ let primitive_constant_strings = [primitive "','" tcharacter ',';
                                   primitive "'x'" tcharacter 'x';
                                   primitive "'y'" tcharacter 'y';
                                   primitive "'z'" tcharacter 'z';
-                                 ];;
+                                 ];; *)
 (* let primitive_slice_string = primitive "slice-string" (tint @> tint @> tstring @> tstring)
  *     (fun i j s ->
  *        let i = i + (if i < 0 then String.length s else 0) in
@@ -413,7 +413,7 @@ let primitive_constant_strings = [primitive "','" tcharacter ',';
 
 
 
-
+(* 
 let primitive0 = primitive "0" tint 0;;
 let primitive1 = primitive "1" tint 1;;
 let primitiven1 = primitive "-1" tint (0-1);;
@@ -473,7 +473,7 @@ let primitive_decrement = primitive "decr" (tint @> tint) (fun x -> x - 1);;
 let primitive_subtraction = primitive "-" (tint @> tint @> tint) (-);;
 let primitive_negation = primitive "negate" (tint @> tint) (fun x -> 0-x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
-let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);;
+let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);; *)
 
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
 
@@ -1471,3 +1471,80 @@ let primitive_rrevcdr = primitive "_rrevcdr" ((tlist tsubstr) @> (tlist tsubstr)
   let slice = Array.sub arr 0 (Array.length arr - 1) in
   Array.to_list slice
   );; 
+
+(* Initial (non-semantic) Gadgets definitions *)
+let primitive_0_5 = primitive "0.5" (tfloat) ("0.5_DUMMY");;
+let primitive_0_75 = primitive "0.75" (tfloat) ("0.75_DUMMY");;
+let primitive_1_5 = primitive "1.5" (tfloat) ("1.5_DUMMY");;
+let primitive_1 = primitive "1" (tfloat) ("1_DUMMY");;
+let primitive_1_25 = primitive "1.25" (tfloat) ("1.25_DUMMY");;
+let primitive_1_75 = primitive "1.75" (tfloat) ("1.75_DUMMY");;
+let primitive_2 = primitive "2" (tfloat) ("2_DUMMY");;
+let primitive_2_25 = primitive "2.25" (tfloat) ("2.25_DUMMY");;
+let primitive_2_5 = primitive "2.5" (tfloat) ("2.5_DUMMY");;
+let primitive_2_75 = primitive "2.75" (tfloat) ("2.75_DUMMY");;
+let primitive_3 = primitive "3" (tfloat) ("3_DUMMY");;
+let primitive_3_25 = primitive "3.25" (tfloat) ("3.25_DUMMY");;
+let primitive_3_5 = primitive "3.5" (tfloat) ("3.5_DUMMY");;
+let primitive_4 = primitive "4" (tfloat) ("4_DUMMY");;
+let primitive_5 = primitive "5" (tfloat) ("5_DUMMY");;
+let primitive_6 = primitive "6" (tfloat) ("6_DUMMY");;
+let primitive_3_75 = primitive "3.75" (tfloat) ("3.75_DUMMY");;
+let primitive_8 = primitive "8" (tfloat) ("8_DUMMY");;
+let primitive_9 = primitive "9" (tfloat) ("9_DUMMY");;
+let primitive_10 = primitive "10" (tfloat) ("10_DUMMY");;
+let primitive_11 = primitive "11" (tfloat) ("11_DUMMY");;
+let primitive_4_25 = primitive "4.25" (tfloat) ("4.25_DUMMY");;
+let primitive_4_5 = primitive "4.5" (tfloat) ("4.5_DUMMY");;
+let primitive_4_75 = primitive "4.75" (tfloat) ("4.75_DUMMY");;
+let primitive_5_25 = primitive "5.25" (tfloat) ("5.25_DUMMY");;
+let primitive_5_5 = primitive "5.5" (tfloat) ("5.5_DUMMY");;
+let primitive_5_75 = primitive "5.75" (tfloat) ("5.75_DUMMY");;
+let primitive_0 = primitive "0" (tfloat) ("0_DUMMY");;
+let primitive_0_25 = primitive "0.25" (tfloat) ("0.25_DUMMY");;
+let primitive_6_25 = primitive "6.25" (tfloat) ("6.25_DUMMY");;
+let primitive_6_5 = primitive "6.5" (tfloat) ("6.5_DUMMY");;
+let primitive_6_75 = primitive "6.75" (tfloat) ("6.75_DUMMY");;
+let primitive_neg0_75 = primitive "-0.75" (tfloat) ("-0.75_DUMMY");;
+let primitive_neg0_5 = primitive "-0.5" (tfloat) ("-0.5_DUMMY");;
+let primitive_7 = primitive "7" (tfloat) ("7_DUMMY");;
+let primitive_7_25 = primitive "7.25" (tfloat) ("7.25_DUMMY");;
+let primitive_7_5 = primitive "7.5" (tfloat) ("7.5_DUMMY");;
+let primitive_7_75 = primitive "7.75" (tfloat) ("7.75_DUMMY");;
+let primitive_neg0_25 = primitive "-0.25" (tfloat) ("-0.25_DUMMY");;
+let primitive_8_25 = primitive "8.25" (tfloat) ("8.25_DUMMY");;
+let primitive_8_5 = primitive "8.5" (tfloat) ("8.5_DUMMY");;
+let primitive_8_75 = primitive "8.75" (tfloat) ("8.75_DUMMY");;
+let primitive_9_25 = primitive "9.25" (tfloat) ("9.25_DUMMY");;
+let primitive_9_5 = primitive "9.5" (tfloat) ("9.5_DUMMY");;
+let primitive_9_75 = primitive "9.75" (tfloat) ("9.75_DUMMY");;
+let primitive_12 = primitive "12" (tfloat) ("12_DUMMY");;
+let primitive_neg1_25 = primitive "-1.25" (tfloat) ("-1.25_DUMMY");;
+let primitive_neg2_5 = primitive "-2.5" (tfloat) ("-2.5_DUMMY");;
+let primitive_neg2_25 = primitive "-2.25" (tfloat) ("-2.25_DUMMY");;
+let primitive_neg2 = primitive "-2" (tfloat) ("-2_DUMMY");;
+let primitive_neg1 = primitive "-1" (tfloat) ("-1_DUMMY");;
+let primitive_neg1_5 = primitive "-1.5" (tfloat) ("-1.5_DUMMY");;
+let primitive_neg3 = primitive "-3" (tfloat) ("-3_DUMMY");;
+let primitive_neg2_75 = primitive "-2.75" (tfloat) ("-2.75_DUMMY");;
+let primitive_neg1_75 = primitive "-1.75" (tfloat) ("-1.75_DUMMY");;
+let primitive_pi = primitive "pi" (tfloat) ("pi_DUMMY");;
+let primitive_neg = primitive "-" (tfloat @> tfloat @> tfloat) ("-_DUMMY");;
+let primitive_add = primitive "+" (tfloat @> tfloat @> tfloat) ("+_DUMMY");;
+let primitive_mult = primitive "*" (tfloat @> tfloat @> tfloat) ("*_DUMMY");;
+let primitive_div = primitive "/" (tfloat @> tfloat @> tfloat) ("/_DUMMY");;
+let primitive_pow = primitive "pow" (tfloat @> tfloat @> tfloat) ("^_DUMMY");;
+let primitive_sin = primitive "sin" (tfloat @> tfloat) ("sin_DUMMY");;
+let primitive_cos = primitive "cos" (tfloat @> tfloat) ("cos_DUMMY");;
+let primitive_tan = primitive "tan" (tfloat @> tfloat) ("tan_DUMMY");;
+let primitive_max = primitive "max" (tfloat @> tfloat @> tfloat) ("max_DUMMY");;
+let primitive_min = primitive "min" (tfloat @> tfloat @> tfloat) ("min_DUMMY");;
+let primitive_empt = primitive "[]" (tstroke) ("[]_DUMMY");;
+let primitive_l = primitive "l" (tstroke) ("l_DUMMY");;
+let primitive_c = primitive "c" (tstroke) ("c_DUMMY");;
+let primitive_r = primitive "r" (tstroke) ("r_DUMMY");;
+let primitive_r_s = primitive "r_s" (tfloat @> tfloat @> tstroke) ("r_s_DUMMY");;
+let primitive_M = primitive "M" (tfloat @> tfloat @> tfloat @> tfloat @> ttransmat) ("M_DUMMY");;
+let primitive_T = primitive "T" (tstroke @> ttransmat @> tstroke) ("T_DUMMY");;
+let primitive_C = primitive "C" (tstroke @> tstroke @> tstroke) ("C_DUMMY");;
+let primitive_repeat = primitive "repeat" (tstroke @> tfloat @> ttransmat @> tstroke) ("repeat_DUMMY");;

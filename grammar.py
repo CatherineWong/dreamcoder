@@ -126,6 +126,24 @@ class Grammar(object):
             continuationType=continuationType,
         )
 
+    def outputDummyOcamlPrimitives(self):
+        def safe_name(name):
+            name = name.replace("-", "neg")
+            name = name.replace("[]", "empt")
+            name = name.replace("+", "add")
+            name = name.replace("-", "sub")
+            name = name.replace("/", "div")
+            name = name.replace("*", "mult")
+            name = name.replace(".", "_")
+            name = name.replace("^", "pow")
+            return name
+
+        for (_, tp, p) in self.productions:
+            ocaml_type = str(tp).replace("->", "@>")
+            print(
+                f'let primitive_{safe_name(str(p))} = primitive "{str(p)}" ({ocaml_type}) ("{str(p)}_DUMMY");;'
+            )
+
     @staticmethod
     def fromJson(json_grammar):
         reloaded_primitives = [
