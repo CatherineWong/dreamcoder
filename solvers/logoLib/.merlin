@@ -1,0 +1,11 @@
+B ../_build/default/logoLib/.logoLib.objs
+B /Users/catherinewong/.opam/4.06.1+flambda/lib/cairo2
+B /Users/catherinewong/.opam/4.06.1+flambda/lib/gg
+B /Users/catherinewong/.opam/4.06.1+flambda/lib/ocaml
+B /Users/catherinewong/.opam/4.06.1+flambda/lib/vg
+FLG -open LogoLib -w -40
+S .
+S /Users/catherinewong/.opam/4.06.1+flambda/lib/cairo2
+S /Users/catherinewong/.opam/4.06.1+flambda/lib/gg
+S /Users/catherinewong/.opam/4.06.1+flambda/lib/ocaml
+S /Users/catherinewong/.opam/4.06.1+flambda/lib/vg

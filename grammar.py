@@ -199,8 +199,11 @@ class Grammar(object):
         j = {
             "logVariable": self.logVariable,
             "productions": [
-                {"expression": str(p), "logProbability": l}
-                for l, _, p in self.productions
+                {
+                    "expression": str(p),
+                    "logProbability": l,
+                }
+                for l, t, p in self.productions
             ],
         }
         if self.continuationType is not None:
@@ -1137,14 +1140,11 @@ class Uses(object):
         self.actualUses = actualUses
 
     def __str__(self):
-        return (
-            "Uses(actualVariables = %f, possibleVariables = %f, actualUses = %s, possibleUses = %s)"
-            % (
-                self.actualVariables,
-                self.possibleVariables,
-                self.actualUses,
-                self.possibleUses,
-            )
+        return "Uses(actualVariables = %f, possibleVariables = %f, actualUses = %s, possibleUses = %s)" % (
+            self.actualVariables,
+            self.possibleVariables,
+            self.actualUses,
+            self.possibleUses,
         )
 
     def __repr__(self):

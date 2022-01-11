@@ -13,10 +13,11 @@ type vs =
   | AbstractSpace of int
   | IndexSpace of int
   | TerminalSpace of program
-  | Universe | Void
+  | Universe | Void | NotInTable
 
 type vt = {universe : int;
            void : int;
+           not_in_table : int;
            s2i : (vs,int) Hashtbl.t;
            i2s : vs ra;
            (* dynamic programming *)
@@ -40,6 +41,7 @@ let deallocate_versions v =
 let rec string_of_versions t j = match index_table t j with
   | Universe -> "U"
   | Void -> "Void"
+  | NotInTable -> "NotInTable"
   | ApplySpace(f, x) -> Printf.sprintf "@(%s, %s)"
                           (string_of_versions t f) (string_of_versions t x)
   | AbstractSpace(b) -> Printf.sprintf "abs(%s)"
@@ -61,8 +63,14 @@ let incorporate_space t v : int =
       i
     end
 
+let lookup_version_table t v : int = 
+ match Hashtbl.find t.s2i v with
+  | Some(i) -> i
+  | None -> t.not_in_table
+
 let new_version_table() : vt =
   let t = {void=0;
+           not_in_table= -1;
            universe=1;
            s2i=Hashtbl.Poly.create();
            i2s=empty_resizable();
@@ -74,13 +82,15 @@ let new_version_table() : vt =
   assert (incorporate_space t Universe = t.universe);
   t
 
-let version_apply t f x =
-  if f = t.void || x = t.void then t.void else incorporate_space t (ApplySpace(f,x))
-let version_abstract t b =
-  if b = t.void then t.void else incorporate_space t (AbstractSpace(b))
-let version_index t i = incorporate_space t (IndexSpace(i))
-let version_terminal t e =
-  incorporate_space t (TerminalSpace(e))
+let version_apply ?incorporation_fn:(incorporation_fn=incorporate_space) t f x =
+  if f = t.not_in_table || x = t.not_in_table then t.not_in_table else
+    if f = t.void || x = t.void then t.void else incorporation_fn t (ApplySpace(f,x))
+let version_abstract ?incorporation_fn:(incorporation_fn=incorporate_space) t b =
+  if b = t.not_in_table then t.not_in_table else
+    if b = t.void then t.void else incorporation_fn t (AbstractSpace(b))
+let version_index ?incorporation_fn:(incorporation_fn=incorporate_space) t i = incorporation_fn t (IndexSpace(i))
+let version_terminal ?incorporation_fn:(incorporation_fn=incorporate_space) t e =
+  incorporation_fn t (TerminalSpace(e))
 let union t vs =
   if List.mem vs (t.universe) ~equal:(=) then t.universe else
     let vs = vs |> List.concat_map  ~f:(fun v -> match index_table t v with
@@ -93,12 +103,28 @@ let union t vs =
     | [v] -> v
     | _ -> incorporate_space t (Union(vs))
     
+(* Using incorporate_space adds to the table. Using lookup_version_table returns not in table sometimes. **)    
+(* let rec incorporate t e ?incorporation_fn:(incorporation_fn=incorporate_space) =
+  match e with
+  | Index(i) -> version_index t i ~incorporation_fn
+  | Abstraction(b) -> version_abstract t (incorporate t b ~incorporation_fn) incorporation_fn
+  | Apply(f,x) -> version_apply t (incorporate t f ~incorporation_fn) (incorporate t x ~incorporation_fn) incorporation_fn
+  | Primitive(_,_,_) | Invented(_,_) -> version_terminal t (strip_primitives e) incorporation_fn *)
+
 let rec incorporate t e =
   match e with
   | Index(i) -> version_index t i
   | Abstraction(b) -> version_abstract t (incorporate t b)
   | Apply(f,x) -> version_apply t (incorporate t f) (incorporate t x)
   | Primitive(_,_,_) | Invented(_,_) -> version_terminal t (strip_primitives e)
+
+let rec incorporate_if_in_table t e = 
+    match e with
+  | Index(i) -> version_index t i ~incorporation_fn:lookup_version_table
+  | Abstraction(b) -> version_abstract t (incorporate_if_in_table t b) ~incorporation_fn:lookup_version_table
+  | Apply(f,x) -> version_apply t (incorporate_if_in_table t f) (incorporate_if_in_table t x) ~incorporation_fn:lookup_version_table
+  | Primitive(_,_,_) | Invented(_,_) -> version_terminal t (strip_primitives e) ~incorporation_fn:lookup_version_table
+
 
 
 let rec extract t j =
@@ -115,6 +141,7 @@ let rec extract t j =
     extract t b |> List.map ~f:(fun b' ->
         Abstraction(b'))
   | Universe -> [primitive "UNIVERSE" t0 ()]
+  | NotInTable -> [primitive "NOTINTABLE" t0 ()]
 
 let rec child_spaces t j =
   (j :: 
@@ -535,6 +562,7 @@ let garbage_collect_versions ?verbose:(verbose=false) t indices =
     | TerminalSpace(p) -> version_terminal nt p
     | Universe -> nt.universe
     | Void -> nt.void
+    | NotInTable -> nt.not_in_table
   in
   let indices = indices |> List.map ~f:(List.map ~f:reincorporate) in
   if verbose then
@@ -567,6 +595,7 @@ let rec minimum_cost_inhabitants ?given:(given=None) ?canBeLambda:(canBeLambda=t
       | _ -> 
       match index_table t.cost_table_parent j with
       | Universe | Void -> assert false
+      | NotInTable -> (Float.infinity,[])
       | IndexSpace(_) | TerminalSpace(_) -> (1., [j])
       | Union(u) ->
         let children = u |> List.map ~f:(minimum_cost_inhabitants ~given ~canBeLambda t) in
@@ -753,22 +782,25 @@ let beam_costs'' ~ct ~bs (candidates : int list) (frontier_indices : (int list) 
 (* For each of the candidates returns the minimum description length of the frontiers *)
 let beam_costs' ~ct ~bs (candidates : int list) (frontier_indices : (int list) list)
   : float list =
-  let caching_table = beam_costs'' ~ct ~bs candidates frontier_indices in
+  let ct : cost_table = ct in
+  let v = ct.cost_table_parent in 
+  let valid_candidates = candidates |> List.filter ~f:(fun c -> c > v.not_in_table) in 
+  let caching_table = beam_costs'' ~ct ~bs valid_candidates frontier_indices in
   let frontier_beams = frontier_indices |> List.map ~f:(List.map ~f:(fun j ->
     get_resizable caching_table j |> get_some)) in
 
-  let score i =
-    let corpus_size = frontier_beams |> List.map ~f:(fun bs ->
-        bs |> List.map ~f:(fun b -> min (relative_argument b i) (relative_function b i)) |>
-        fold1 min) |> fold1 (+.)
-    in
-    corpus_size
+  let score_valid i =
+    if i > v.not_in_table then 
+      let corpus_size = frontier_beams |> List.map ~f:(fun bs ->
+          bs |> List.map ~f:(fun b -> min (relative_argument b i) (relative_function b i)) |>
+          fold1 min) |> fold1 (+.)
+      in
+      corpus_size
+    else
+      Float.infinity
   in
+  candidates |> List.map ~f:score_valid
 
-  candidates |> List.map ~f:score
-
-  
-  
 let beam_costs ~ct ~bs (candidates : int list) (frontier_indices : (int list) list) =
   let scored = List.zip_exn (beam_costs' ~ct ~bs candidates frontier_indices) candidates in
   scored |> List.sort ~compare:(fun (s1,_) (s2,_) -> Float.compare s1 s2)
