@@ -516,7 +516,7 @@ let enumerate_programs ?extraQuiet:(extraQuiet=false) ?maxFreeParameters:(maxFre
 ;; *)
 
 
-
+(* 
 let test_best_enumeration() = 
   let g = primitive_grammar [
       differentiable_placeholder;
@@ -538,4 +538,4 @@ let test_best_enumeration() =
   in
   let open Sys in
   enumerate_programs ~maxFreeParameters:mfp ~final:(fun () -> List.take !frontier 5) ~nc:(Sys.argv.(1) |> Int.of_string) (g |> make_dummy_contextual) request 0. (Sys.argv.(2) |> Float.of_string) k
-;;
+;; *)

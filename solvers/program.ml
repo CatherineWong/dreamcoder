@@ -348,12 +348,12 @@ let [@warning "-20"] primitive ?manualLaziness:(manualLaziness = false)
   p
 
 (* let primitive_empty_string = primitive "emptyString" tstring "";; *)
-let primitive_uppercase = primitive "caseUpper" (tcharacter @> tcharacter) Char.uppercase;;
+(* let primitive_uppercase = primitive "caseUpper" (tcharacter @> tcharacter) Char.uppercase;;
 (* let primitive_uppercase = primitive "strip" (tstring @> tstring) (fun s -> String.strip s);; *)
 let primitive_lowercase = primitive "caseLower" (tcharacter @> tcharacter) Char.lowercase;;
 let primitive_character_equal = primitive "char-eq?" (tcharacter @> tcharacter @> tboolean) Char.equal;;
 let primitive_character_equal = primitive "char-upper?" (tcharacter @> tboolean) Char.is_uppercase;;
-let primitive_character_equal = primitive "str-eq?" (tlist tcharacter @> tlist tcharacter @> tboolean) (fun x y -> x = y);;
+let primitive_character_equal = primitive "str-eq?" (tlist tcharacter @> tlist tcharacter @> tboolean) (fun x y -> x = y);; *)
 (* let primitive_capitalize = primitive "caseCapitalize" (tstring @> tstring) String.capitalize;;
  * let primitive_concatenate = primitive "concatenate" (tstring @> tstring @> tstring) ( ^ );; *)
 (* let primitive_constant_strings = [primitive "','" tcharacter ',';
@@ -475,7 +475,7 @@ let primitive_negation = primitive "negate" (tint @> tint) (fun x -> 0-x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
 let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);; *)
 
-let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
+(* let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
 
 let primitive_true = primitive "true" tboolean true;;
 let primitive_false = primitive "false" tboolean false;;
@@ -499,48 +499,6 @@ let primitive_cdr = primitive "cdr" (tlist t0 @> tlist t0) (fun xs -> List.tl_ex
 let primitive_is_empty = primitive "empty?" (tlist t0 @> tboolean)
     (function | [] -> true
               | _ -> false);;
-
-let primitive_string_constant = primitive "STRING" (tlist tcharacter) ();;
-let rec substitute_string_constants (alternatives : char list list) e = match e with
-  | Primitive(c,"STRING",_) -> alternatives |> List.map ~f:(fun a -> Primitive(c,"STRING",ref a |> magical))
-  | Primitive(_,_,_) -> [e]
-  | Invented(_,b) -> substitute_string_constants alternatives b
-  | Apply(f,x) -> substitute_string_constants alternatives f |> List.map ~f:(fun f' ->
-      substitute_string_constants alternatives x |> List.map ~f:(fun x' ->
-          Apply(f',x'))) |> List.concat 
-  | Abstraction(b) -> substitute_string_constants alternatives b |> List.map ~f:(fun b' ->
-      Abstraction(b'))
-  | Index(_) -> [e]
-
-let rec number_of_string_constants = function
-  | Primitive(_,"STRING",_) -> 1
-  | Primitive(_,_,_) -> 0
-  | Invented(_,b) | Abstraction(b) -> number_of_string_constants b
-  | Apply(f,x) -> number_of_string_constants f + number_of_string_constants x
-  | Index(_) -> 0
-
-let rec string_constants_length = function
-  | Primitive(_,"STRING",v) ->
-    let v = magical v in
-    List.length (!v)
-  | Primitive(_,_,_) -> 0
-  | Invented(_,b) | Abstraction(b) -> string_constants_length b
-  | Apply(f,x) -> string_constants_length f + string_constants_length x
-  | Index(_) -> 0
-
-let rec number_of_real_constants = function
-  | Primitive(_,"REAL",_) -> 1
-  | Primitive(_,_,_) -> 0
-  | Invented(_,b) | Abstraction(b) -> number_of_real_constants b
-  | Apply(f,x) -> number_of_real_constants f + number_of_real_constants x
-  | Index(_) -> 0
-
-let rec number_of_free_parameters = function
-  | Primitive(_,"REAL",_) | Primitive(_,"STRING",_) | Primitive(_,"r_const",_) -> 1
-  | Primitive(_,_,_) -> 0
-  | Invented(_,b) | Abstraction(b) -> number_of_free_parameters b
-  | Apply(f,x) -> number_of_free_parameters f + number_of_free_parameters x
-  | Index(_) -> 0
 
 (** CLEVR Function definitions. See clevrPrimitives.py **)
 (** Utilities for object serialization **)
@@ -1051,6 +1009,49 @@ let primitive_zip = primitive "zip" (tlist t0 @> tlist t1 @> (t0 @> t1 @> t2) @>
 let primitive_fold = primitive "fold" (tlist t0 @> t1 @> (t0 @> t1 @> t1) @> t1)
     (fun l x0 f -> List.fold_right ~f:f ~init:x0 l);;
 
+ *)
+
+let primitive_string_constant = primitive "STRING" (tlist tcharacter) ();;
+let rec substitute_string_constants (alternatives : char list list) e = match e with
+  | Primitive(c,"STRING",_) -> alternatives |> List.map ~f:(fun a -> Primitive(c,"STRING",ref a |> magical))
+  | Primitive(_,_,_) -> [e]
+  | Invented(_,b) -> substitute_string_constants alternatives b
+  | Apply(f,x) -> substitute_string_constants alternatives f |> List.map ~f:(fun f' ->
+      substitute_string_constants alternatives x |> List.map ~f:(fun x' ->
+          Apply(f',x'))) |> List.concat 
+  | Abstraction(b) -> substitute_string_constants alternatives b |> List.map ~f:(fun b' ->
+      Abstraction(b'))
+  | Index(_) -> [e]
+
+let rec number_of_string_constants = function
+  | Primitive(_,"STRING",_) -> 1
+  | Primitive(_,_,_) -> 0
+  | Invented(_,b) | Abstraction(b) -> number_of_string_constants b
+  | Apply(f,x) -> number_of_string_constants f + number_of_string_constants x
+  | Index(_) -> 0
+
+let rec string_constants_length = function
+  | Primitive(_,"STRING",v) ->
+    let v = magical v in
+    List.length (!v)
+  | Primitive(_,_,_) -> 0
+  | Invented(_,b) | Abstraction(b) -> string_constants_length b
+  | Apply(f,x) -> string_constants_length f + string_constants_length x
+  | Index(_) -> 0
+
+let rec number_of_real_constants = function
+  | Primitive(_,"REAL",_) -> 1
+  | Primitive(_,_,_) -> 0
+  | Invented(_,b) | Abstraction(b) -> number_of_real_constants b
+  | Apply(f,x) -> number_of_real_constants f + number_of_real_constants x
+  | Index(_) -> 0
+
+let rec number_of_free_parameters = function
+  | Primitive(_,"REAL",_) | Primitive(_,"STRING",_) | Primitive(_,"r_const",_) -> 1
+  | Primitive(_,_,_) -> 0
+  | Invented(_,b) | Abstraction(b) -> number_of_free_parameters b
+  | Apply(f,x) -> number_of_free_parameters f + number_of_free_parameters x
+  | Index(_) -> 0
 
 let default_recursion_limit = ref 50;;
 let set_recursion_limit l = default_recursion_limit := l;;
@@ -1088,8 +1089,7 @@ let fixed_combinator2 argument1 argument2 body =
     in body (lazy r) x y
   in
 
-  fix argument1 argument2 (* (lazy argument1) (lazy argument2) *)
-
+  fix argument1 argument2 
 
 let primitive_recursion =
   primitive ~manualLaziness:true "fix1" (t0 @> ((t0 @> t1) @> (t0 @> t1)) @> t1)
@@ -1097,7 +1097,6 @@ let primitive_recursion =
 let primitive_recursion2 =
   primitive ~manualLaziness:true "fix2" (t0 @> t1 @> ((t0 @> t1 @> t2) @> (t0 @> t1 @> t2)) @> t2)
     fixed_combinator2;;
-
 
 let is_recursion_of_arity a = function
   | Primitive(_,n,_) -> ("fix"^(Int.to_string a)) = n
@@ -1107,7 +1106,6 @@ let is_recursion_primitive = function
   | Primitive(_,"fix1",_) -> true
   | Primitive(_,"fix2",_) -> true
   | _ -> false
-
 
 let program_parser : program parsing =
   let token = token_parser (fun c -> Char.is_alphanum c || List.mem ~equal:( = )
@@ -1181,296 +1179,7 @@ let program_parser : program parsing =
 
   program_parser ()
 
-let parse_program s = run_parser program_parser s
-
-(* let test_program_inference program desired_type =
- *   let (context,t) = infer_program_type empty_context [] program in
- *   let t = applyContext context t in
- *   let t = canonical_type t in
- *   Printf.printf "%s : %s\n" (string_of_program program) (string_of_type t);
- *   assert (t = (canonical_type desired_type))
- * 
- * let program_test_cases() =
- *   test_program_inference (Abstraction(Index(0))) (t0 @> t0);
- *   test_program_inference (Abstraction(Abstraction(Apply(Index(0),Index(1))))) (t0 @> (t0 @> t1) @> t1);
- *   test_program_inference (Abstraction(Abstraction(Index(1)))) (t0 @> t1 @> t0);
- *   test_program_inference (Abstraction(Abstraction(Index(0)))) (t0 @> t1 @> t1);
- *   let v : int = evaluate [] (Apply(primitive_increment, primitive0)) in
- *   Printf.printf "%d\n" v;
- *   
- * ;; *)
-
-let parsing_test_case s =
-  Printf.printf "Parsing the string %s\n" s;
-  program_parser (s,0) |> List.iter ~f:(fun (p,n) ->
-      if n = String.length s then
-        (Printf.printf "Parsed into the program: %s\n" (string_of_program p);
-         assert (s = (string_of_program p));
-        flush_everything())
-      else
-        (Printf.printf "With the suffix %n, we get the program %s\n" n (string_of_program p);
-         flush_everything()));
-  Printf.printf "\n"
-;;
-
-let parsing_test_cases() =
-  parsing_test_case "(+ 1)";
-  parsing_test_case "($0 $1)";
-  parsing_test_case "(+ 1 $0 $2)";
-  parsing_test_case "(map (+ 1) $0 $1)";
-  parsing_test_case "(map (+ 1) ($0 (+ 1) (- 1) (+ -)) $1)";
-  parsing_test_case "(lambda $0)";
-  parsing_test_case "(lambda (+ 1 #(* 8 1)))";
-  parsing_test_case "(lambda (+ 1 #(* 8 map)))";
-;;
-
-
-(* parsing_test_cases();; *)
-
-
-(* program_test_cases();; *)
-             
-let [@warning "-20"] performance_test_case() =
-  let e = parse_program "(lambda (fix1 $0 (lambda (lambda (if (empty? $0) $0 (cons (* 2 (car $0)) ($1 (cdr $0))))))))" |> get_some in
-  let xs = [2;1;9;3;] in
-  let n = 10000000 in
-  time_it "evaluate program many times" (fun () -> 
-      (0--n) |> List.iter ~f:(fun j ->
-          if j = n then
-            Printf.printf "%s\n" (evaluate [] e xs |> List.map ~f:Int.to_string |> join ~separator:" ")
-          else
-            ignore (evaluate [] e xs)));
-  let c = analyze_evaluation e [] in
-  time_it "evaluate analyzed program many times" (fun () -> 
-      (0--n) |> List.iter ~f:(fun j ->
-          if j = n then
-            Printf.printf "%s\n" (c xs |> List.map ~f:Int.to_string |> join ~separator:" ")
-          else 
-            ignore(c xs)))
-;;
-
-
-(* performance_test_case();; *)
-
-
-(* let recursion_test_case() =
- *   let f zs = fixed_combinator zs (fun r l ->
- *       match l with
- *       | [] -> []
- *       | x::xs -> x*2 :: r xs) in
- *   f (0--18) |> List.map ~f:Int.to_string |> join ~separator:" " |> Printf.printf "%s\n";
- *   f (0--10) |> List.map ~f:Int.to_string |> join ~separator:" " |> Printf.printf "%s\n";
- *   f (0--2) |> List.map ~f:Int.to_string |> join ~separator:" " |> Printf.printf "%s\n";
- *   let e = parse_program "(lambda (fix1 (lambda (lambda (if (empty? $0) $0 (cons (\* 2 (car $0)) ($1 (cdr $0)))))) $0))" |> get_some in
- *   Printf.printf "%s\n" (string_of_program e);
- *   evaluate [] e [1;2;3;4;] |> List.map ~f:Int.to_string |> join ~separator:" " |> Printf.printf "%s\n";
- * 
- *   let e = parse_program "(lambda (lambda (fix2 (lambda (lambda (lambda (if (empty? $1) $0 (cons (car $1) ($2 (cdr $1) $0)))))) $0 $1)))" |> get_some in
- *   infer_program_type empty_context [] e |> snd |> string_of_type |> Printf.printf "%s\n";
- *   evaluate [] e (0--4) [9;42;1] |> List.map ~f:Int.to_string |> join ~separator:" " |> Printf.printf "%s\n" *)
-
-(* recursion_test_case();; *)
-
-(* let timeout_test_cases() = *)
-(*   let list_of_numbers = [ *)
-(*     "(lambda (fix (lambda (lambda (if (empty? $0) $0 (cons (\* 2 (car $0)) ($1 (cdr $0)))))) $0))"; *)
-
-(*   ] in *)
-
-(*   let list_of_numbers = list_of_numbers |> List.map ~f:(analyze_evaluation%get_some%parse_program) in *)
-
-(*   let xs = [(0--10);(0--10);(0--10)] in *)
-
-(*   time_it "evaluated all of the programs" (fun () -> *)
-      
-  
-
-(* let () = *)
-(*   let e = parse_program "(lambda (reducei (lambda (lambda (lambda (range $0)))) empty $0))" |> get_some in *)
-(*   Printf.printf "tp = %s\n" (string_of_type @@ snd @@ infer_program_type empty_context [] e); *)
-(*   let f = evaluate [] e in *)
-(*   f [1;2]; *)
-(*   List.foldi [1;3;2;]  ~init:[]  ~f:(fun x y z -> 0--z) |> List.iter ~f:(fun a -> *)
-(*       Printf.printf "%d\n" a) *)
-
-(* let () = *)
-(*   let e = parse_program "(lambda (lambda (- $1 $0)))" |> get_some in *)
-(*   Printf.printf "%d\n" (run_with_arguments e [1;9]) *)
-let test_lazy_evaluation() =
-  let ps = ["1";"0";"(+ 1 1)";
-            "(lambda (+ $0 2))"; "(+ 5)";
-            "-"; "(lambda2 (- $0 $1))";
-            "((lambda 1) (car empty))";
-            "((lambda $0) 9)";
-            "((lambda ($0 ($0 ($0 1)))) (lambda (+ $0 $0)))";
-            "((lambda (lambda (if (eq? $0 0) $1 (+ $1 $1)))) 5 1)";
-            "((lambda2 (if (eq? $0 0) $1 (+ $1 $1))) 5 0)";
-            "(car (cdr (cons 1 (cons 2 (cons 3 empty)))))";
-            "(cdr (cons 1 (cons 2 (cons 3 empty))))";
-            "(map (+ 1) (cons 1 (cons 2 (cons 3 empty))))";
-            "(map (+ 1) (cons 1 (cons 2 (cons 3 empty))))";
-            "(map (lambda (+ $0 $0)) (cons 1 (cons 2 (cons 3 empty))))";
-            "(fold_right (lambda2 (+ $0 $1)) 0 (cons 1 (cons 2 (cons 3 empty))))";
-            "(fix1 (cons 1 (cons 2 (cons 3 empty))) (lambda2 (if (empty? $0) 0 (+ 1 ($1 (cdr $0))))))";
-            "(fix1 (cons 1 (cons 2 (cons 3 empty))) (lambda2 (if (empty? $0) 0 (+ (car $0) ($1 (cdr $0))))))";
-           "(fix2 5 7 (lambda (lambda (lambda (if (eq? $0 0) 0 (+ $1 ($2 $1 (- $0 1))))))))"] in
-  ps |> List.iter ~f:(fun p ->
-      Printf.printf "About to evaluate the following program lazily: %s\n" p;
-      flush_everything();
-      let p = parse_program p |> get_some in
-      let t = infer_program_type empty_context [] p |> snd in
-      let a = analyze_lazy_evaluation p in
-      let arguments = match List.length (arguments_of_type t) with
-        | 0 -> []
-        | 1 -> [42]
-        | 2 -> [0;1]
-        | _ -> failwith "I can't handle this number of arguments (?)."
-      in
-      Printf.printf "\t(arguments: %s)\n"
-        (arguments |> List.map ~f:Int.to_string |> join ~separator:"; ");
-      flush_everything();
-      let v = run_lazy_analyzed_with_arguments a arguments in
-      begin 
-        match string_of_type (return_of_type t) with
-        | "int" -> 
-          Printf.printf "value = %d\n" (v |> magical)
-        | "list<int>" ->
-          Printf.printf "value = %s\n" (v |> magical |> List.map ~f:Int.to_string |> join ~separator:",")
-        | _ -> failwith "I am not prepared to handle other types"
-      end
-      ;
-      flush_everything ()
-    );;
-
-let test_string () =
-  let p = parse_program "(lambda (fold $0 $0 (lambda (lambda (cdr (if (char-eq? $1 SPACE) $2 $0))))))" |> get_some in
-  let p = analyze_lazy_evaluation p in
-  let x = String.to_list "this is a rigorous" in
-  let y = run_lazy_analyzed_with_arguments p [x] |> String.of_char_list in
-  Printf.printf "%s\n" y
-;;
-
-let test_zip_recursion () =
-  let p = parse_program "(lambda (lambda (#(lambda (lambda (#(lambda (lambda (lambda (fix1 $2 (lambda (lambda (if (empty? $0) $2 ($3 ($1 (cdr $0)) (car $0))))))))) $0 (lambda (lambda (cons ($3 $0) $1))) empty))) (lambda (+ (#(lambda (lambda (car (#(lambda (lambda (lambda (fix1 $2 (lambda (lambda (if (empty? $0) $2 ($3 ($1 (cdr $0)) (car $0))))))))) (#(#(lambda (lambda (lambda (#(lambda (lambda (lambda (lambda (fix1 $3 (lambda (lambda (if ($2 $0) empty (cons ($3 $0) ($1 ($4 $0))))))))))) $1 (lambda ($3 $0 1)) (lambda $0) (lambda (eq? $0 $1)))))) (lambda (lambda (+ $1 $0))) 0) $1) (lambda (lambda (cdr $1))) $0)))) $0 $2) (#(lambda (lambda (car (#(lambda (lambda (lambda (fix1 $2 (lambda (lambda (if (empty? $0) $2 ($3 ($1 (cdr $0)) (car $0))))))))) (#(#(lambda (lambda (lambda (#(lambda (lambda (lambda (lambda (fix1 $3 (lambda (lambda (if ($2 $0) empty (cons ($3 $0) ($1 ($4 $0))))))))))) $1 (lambda ($3 $0 1)) (lambda $0) (lambda (eq? $0 $1)))))) (lambda (lambda (+ $1 $0))) 0) $1) (lambda (lambda (cdr $1))) $0)))) $0 $1))) (#(#(lambda (lambda (lambda (#(lambda (lambda (lambda (lambda (fix1 $3 (lambda (lambda (if ($2 $0) empty (cons ($3 $0) ($1 ($4 $0))))))))))) $1 (lambda ($3 $0 1)) (lambda $0) (lambda (eq? $0 $1)))))) (lambda (lambda (+ $1 $0))) 0) (#(lambda (#(lambda (lambda (lambda (fix1 $2 (lambda (lambda (if (empty? $0) $2 ($3 ($1 (cdr $0)) (car $0))))))))) $0 (lambda (lambda (+ 1 $1))) 0)) $0)))))" |> get_some in
-  let p = analyze_lazy_evaluation p in
-  run_lazy_analyzed_with_arguments p [[1;2;3;];[0;4;6;]] |> List.map ~f:Int.to_string |> String.concat ~sep:"; " |> Printf.printf "%s\n"
-;;
-(* test_zip_recursion();; *)
-
-(* Puddleworld primitive and type definitions for compression namespace purposes. Function definitions are irrelevant.*)
-(* Puddleworld Type Definitions *)
-let t_object_p = make_ground "t_object_p";;
-let t_boolean_p = make_ground "t_boolean_p";;
-let t_action_p = make_ground "t_action_p";;
-let t_direction_p = make_ground "t_direction_p";;
-let t_int_p = make_ground "t_int_p";;
-let t_model_p = make_ground "t_model_p";;
-
-(* Puddleworld Primitive Definitions *)
-
-ignore(primitive "true_p" (t_boolean_p) (fun x -> x));;
-ignore(primitive "left_p" (t_direction_p) (fun x -> x));;
-ignore(primitive "right_p" (t_direction_p) (fun x -> x));;
-ignore(primitive "up_p" (t_direction_p) (fun x -> x));;
-ignore(primitive "down_p" (t_direction_p) (fun x -> x));;
-ignore(primitive "1_p" (t_int_p) (fun x -> x));;
-ignore(primitive "2_p" (t_int_p) (fun x -> x));;
-ignore(primitive "move_p" (t_object_p @> t_action_p) (fun x -> x));;
-ignore(primitive "relate_p" (t_object_p @> t_object_p @> t_direction_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "relate_n_p" (t_object_p @> t_object_p @> t_direction_p @> t_int_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "in_half_p" (t_object_p @> t_direction_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "apply_p" ((t_object_p @> t_boolean_p) @> t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "and__p" (t_boolean_p @> t_boolean_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "max_in_dir_p" (t_object_p @> t_direction_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "is_edge_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "grass_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "puddle_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "star_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "circle_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "triangle_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "heart_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "spade_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "diamond_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "rock_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "tree_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "house_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "horse_p" (t_object_p @> t_boolean_p) (fun x -> x));;
-ignore(primitive "ec_unique_p" (t_model_p @> (t_object_p @> t_boolean_p) @> t_object_p) (fun x -> x));;
-
-(* RE2 Type Definitions *)
-let tfullstr = make_ground "tfullstr";;
-let tsubstr = make_ground "tsubstr";;
-
-(** Regex constants **)
-let primitive_ra = primitive "_a" tsubstr "a";;
-let primitive_rb = primitive "_b" tsubstr "b";;
-let primitive_rc = primitive "_c" tsubstr "c";;
-let primitive_rd = primitive "_d" tsubstr "d";;
-let primitive_re = primitive "_e" tsubstr "e";;
-let primitive_rf = primitive "_f" tsubstr "f";;
-let primitive_rg = primitive "_g" tsubstr "g";;
-let primitive_rh = primitive "_h" tsubstr "h";;
-let primitive_ri = primitive "_i" tsubstr "i";;
-let primitive_rj = primitive "_j" tsubstr "j";;
-let primitive_rk = primitive "_k" tsubstr "k";;
-let primitive_rl = primitive "_l" tsubstr "l";;
-let primitive_rm = primitive "_m" tsubstr "m";;
-let primitive_rn = primitive "_n" tsubstr "n";;
-let primitive_ro = primitive "_o" tsubstr "o";;
-let primitive_rp = primitive "_p" tsubstr "p";;
-let primitive_rq = primitive "_q" tsubstr "q";;
-let primitive_rr = primitive "_r" tsubstr "r";;
-let primitive_rs = primitive "_s" tsubstr "s";;
-let primitive_rt = primitive "_t" tsubstr "t";;
-let primitive_ru = primitive "_u" tsubstr "u";;
-let primitive_rv = primitive "_v" tsubstr "v";;
-let primitive_rw = primitive "_w" tsubstr "w";;
-let primitive_rx = primitive "_x" tsubstr "x";;
-let primitive_ry = primitive "_y" tsubstr "y";;
-let primitive_rz = primitive "_z" tsubstr "z";;
-
-let primitive_emptystr = primitive "_rempty" tsubstr "";;
-let primitive_rdot = primitive "_rdot" tsubstr ".";;
-
-let primitive_rvowel = primitive "_rvowel" tsubstr "(a|e|i|o|u)" ;;
-let primitive_rconsonant = primitive "_rconsonant" tsubstr "[^aeiou]" ;;
-
-
-let primitive_rnot = primitive "_rnot" (tsubstr @> tsubstr) (fun s -> "[^" ^ s ^ "]");;
-let primitive_ror = primitive "_ror" (tsubstr @> tsubstr @> tsubstr) (fun s1 s2 -> "(("^ s1 ^ ")|("^ s2 ^"))");;
-let primitive_rconcat = primitive "_rconcat" (tsubstr @> tsubstr @> tsubstr) (fun s1 s2 -> s1 ^ s2);;
-
-(* RE2 Function Definitions *)
-(* Exact regex match *)
-let primitive_rmatch = primitive "_rmatch" (tsubstr @> tsubstr @> tboolean) (fun s1 s2 -> 
-  try 
-    let regex = Re2.create_exn ("^" ^ s1 ^ "$") in
-    Re2.matches regex s2 
-  with _ -> false
-  );;
-  
-(** Flattens list of substrings back into a string *)
-let primitive_rflatten = primitive "_rflatten" ((tlist tsubstr) @> tfullstr) (fun l -> String.concat ~sep:"" l);;
-let primitive_rtail = primitive "_rtail" ((tlist tsubstr) @> tsubstr) (fun l -> 
-  let arr = Array.of_list l in arr.(Array.length arr - 1)
-  );;
-
-(** Splits s2 on regex s1 as delimiter, including the matches *)
-let not_empty str = (String.length str) > 0;;
-let primitive_rsplit = primitive "_rsplit" (tsubstr @> tfullstr @> (tlist tsubstr)) (fun s1 s2 -> 
-  try
-    let regex = Re2.create_exn s1 in
-    let init_split = Re2.split ~include_matches:true regex s2 in
-    (List.filter init_split not_empty)
-  with _ -> [s2]
-  );;
-  
-let primitive_rappend = primitive "_rappend" (tsubstr @> (tlist tsubstr) @> (tlist tsubstr)) (fun x l -> l @ [x]);;
-let primitive_rrevcdr = primitive "_rrevcdr" ((tlist tsubstr) @> (tlist tsubstr)) (fun l -> 
-  let arr = Array.of_list l in 
-  let slice = Array.sub arr 0 (Array.length arr - 1) in
-  Array.to_list slice
-  );; 
+let parse_program s = run_parser program_parser s;;
 
 (* Initial (non-semantic) Gadgets definitions *)
 let primitive_0_5 = primitive "0.5" (tfloat) ("0.5_DUMMY");;

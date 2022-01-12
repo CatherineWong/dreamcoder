@@ -94,7 +94,7 @@ let run_recent_logo ~timeout program =
 ;;
 
 (** Sort and deduplicate the objects before comparing **)
-register_special_task "clevrobjectlist" (fun extras
+(* register_special_task "clevrobjectlist" (fun extras
   ?timeout:(timeout = 0.05) name ty examples ->
   {
     name = name    ;
@@ -133,7 +133,7 @@ register_special_task "clevrobjectlist" (fun extras
           then 0.0
           else log 0.0)
   }
-);;
+);; *)
 
 register_special_task "LOGO" (fun extras ?timeout:(timeout = 0.001) name ty examples ->
     let open Yojson.Basic.Util in
@@ -230,7 +230,7 @@ register_special_task "LOGO" (fun extras ?timeout:(timeout = 0.001) name ty exam
 
 
 
-register_special_task "differentiable"
+(* register_special_task "differentiable"
   (fun extras
     ?timeout:(timeout = 0.001) name ty examples ->
 
@@ -326,7 +326,7 @@ register_special_task "differentiable"
           | None -> 0. -. d*.parameterPenalty -. n *. l /. temperature
           | Some(t) ->
             if l < t then 0. -. d*.parameterPenalty else log 0.)
-  });;
+  });; *)
 
 
 register_special_task "stringConstant" (fun extras
