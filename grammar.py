@@ -22,6 +22,7 @@ class NoCandidates(Exception):
 
 class Grammar(object):
     def __init__(self, logVariable, productions, continuationType=None):
+        self.invention_name = "INV"
         self.logVariable = logVariable
         self.productions = productions
 
@@ -51,6 +52,29 @@ class Grammar(object):
             self.original_to_escaped,
             self.escaped_to_primitive_counts,
         ) = self.build_escaped_vocab(self.vocab)
+
+        (
+            self.masked_to_original,
+            self.original_to_masked,
+        ) = self.build_invention_masked_vocab()
+
+    def build_invention_masked_vocab(self):
+        inventions = []
+        self.masked_to_original, self.original_to_masked = {}, {}
+        for p in [
+            p for (_, _, p) in sorted(self.productions, key=lambda prod: str(prod[-1]))
+        ]:
+            if p.isInvented:
+                masked_name = f"{self.invention_name}_{len(inventions)}"
+                inventions += [p]
+            else:
+                masked_name = str(p)
+            self.masked_to_original[masked_name] = str(p)
+            self.original_to_masked[str(p)] = masked_name
+        return self.masked_to_original, self.original_to_masked
+
+    def mask_invention_tokens(self, tokens):
+        return [self.original_to_masked[t] for t in tokens]
 
     def build_escaped_vocab(self, vocab):
         escaped_vocab = {self.escape_token(t): i for (t, i) in self.vocab.items()}

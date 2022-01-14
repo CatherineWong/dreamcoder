@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from operator import sub
 from dreamcoder.type import *
 from dreamcoder.utilities import *
 
@@ -386,11 +387,17 @@ class Application(Program):
     def visit(self, visitor, *arguments, **keywords):
         return visitor.application(self, *arguments, **keywords)
 
-    def show(self, isFunction):
+    def show(self, isFunction, substitution=None):
         if isFunction:
-            return "%s %s" % (self.f.show(True), self.x.show(False))
+            return "%s %s" % (
+                self.f.show(True, substitution),
+                self.x.show(False, substitution),
+            )
         else:
-            return "(%s %s)" % (self.f.show(True), self.x.show(False))
+            return "(%s %s)" % (
+                self.f.show(True, substitution),
+                self.x.show(False, substitution),
+            )
 
     def evaluate(self, environment):
         if self.isConditional:
@@ -474,7 +481,7 @@ class Index(Program):
     def __init__(self, i):
         self.i = i
 
-    def show(self, isFunction):
+    def show(self, isFunction, substitution=None):
         return "$%d" % self.i
 
     def __eq__(self, o):
@@ -613,8 +620,8 @@ class Abstraction(Program):
         self.body.annotateTypes(context, [v] + environment)
         self.annotatedType = arrow(v.applyMutable(context), self.body.annotatedType)
 
-    def show(self, isFunction):
-        return "(lambda %s)" % (self.body.show(False))
+    def show(self, isFunction, substitution=None):
+        return "(lambda %s)" % (self.body.show(False, substitution))
 
     def evaluate(self, environment):
         return lambda x: self.body.evaluate([x] + environment)
@@ -690,7 +697,7 @@ class Primitive(Program):
     def visit(self, visitor, *arguments, **keywords):
         return visitor.primitive(self, *arguments, **keywords)
 
-    def show(self, isFunction):
+    def show(self, isFunction, substitution=None):
         return self.name
 
     def clone(self):
@@ -770,8 +777,8 @@ class Invented(Program):
     def isInvented(self):
         return True
 
-    def show(self, isFunction):
-        return "#%s" % (self.body.show(False))
+    def show(self, isFunction, substitution=None):
+        return "#%s" % (self.body.show(False, substitution))
 
     def visit(self, visitor, *arguments, **keywords):
         return visitor.invented(self, *arguments, **keywords)
@@ -848,7 +855,7 @@ class FragmentVariable(Program):
     def __init__(self):
         pass
 
-    def show(self, isFunction):
+    def show(self, isFunction, substitution=None):
         return "??"
 
     def __eq__(self, o):
@@ -911,7 +918,7 @@ class Hole(Program):
     def __init__(self):
         pass
 
-    def show(self, isFunction):
+    def show(self, isFunction, substitution=None):
         return "<HOLE>"
 
     @property
@@ -1120,6 +1127,7 @@ class PrettyVisitor(object):
         self.Lisp = Lisp
         self.numberOfVariables = 0
         self.freeVariables = {}
+        self.substitution_dict = substitution_dict
 
         self.variableNames = ["x", "y", "z", "u", "v", "w"]
         self.variableNames += [chr(ord("a") + j) for j in range(20)]
@@ -1163,6 +1171,7 @@ class PrettyVisitor(object):
     def abstraction(self, e, environment, isFunction, isAbstraction):
         toplevel = self.toplevel
         self.toplevel = False
+
         if not self.Lisp:
             # Invent a new variable
             v = self.makeVariable()

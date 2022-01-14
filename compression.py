@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pickle
+from socket import timeout
 import subprocess
 import sys
 
@@ -69,6 +70,7 @@ def ocamlInduce(
     executable=None,
     lc_score=0.0,
     max_compression=10000,
+    timeout=None,
 ):
     # This is a dirty hack!
     # Memory consumption increases with the number of CPUs
@@ -112,25 +114,34 @@ def ocamlInduce(
                 language_alignments
             )
         message = json.dumps(message)
-        if True:
-            timestamp = datetime.datetime.now().isoformat()
-            os.system("mkdir  -p compressionMessages")
-            fn = "compressionMessages/%s" % timestamp
-            with open(fn, "w") as f:
-                f.write(message)
-            eprint("Compression message saved to:", fn)
+        # if True:
+        #     timestamp = datetime.datetime.now().isoformat()
+        #     os.system("mkdir  -p compressionMessages")
+        #     fn = "compressionMessages/%s" % timestamp
+        #     with open(fn, "w") as f:
+        #         f.write(message)
+        #     eprint("Compression message saved to:", fn)
 
         try:
             # Get relative path
             executable = "dreamcoder/compression" if executable is None else executable
             compressor_file = os.path.join(get_root_dir(), executable)
             process = subprocess.Popen(
-                compressor_file, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+                compressor_file,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
             )
-            response, error = process.communicate(bytes(message, encoding="utf-8"))
+            if timeout is not None:
+                response, error = process.communicate(
+                    bytes(message, encoding="utf-8"), timeout=timeout
+                )
+            else:
+                response, error = process.communicate(bytes(message, encoding="utf-8"))
             response = json.loads(response.decode("utf-8"))
-        except OSError as exc:
-            raise exc
+        except Exception as exc:
+            print("Timeout exceeded; returning original grammar and frontiers.")
+            os.system("pkill compression")
+            return g, originalFrontiers
 
         g = response["DSL"]
         g = Grammar(

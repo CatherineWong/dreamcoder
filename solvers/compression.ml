@@ -16,7 +16,7 @@ open Grammar
 (* open Eg *)
 open Versions
 
-let verbose_compression = ref false;;
+let verbose_compression = ref true;;
 
 (* If this is true, then we collect and report data on the sizes of the version spaces, for each program, and also for each round of inverse beta *)
 let collect_data = ref false;;
