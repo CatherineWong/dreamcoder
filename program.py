@@ -196,10 +196,21 @@ class Program(object):
                 return Index(int(e[1:]))
             if e in Primitive.GLOBALS:
                 return Primitive.GLOBALS[e]
+
             if e == "??" or e == "?":
                 return FragmentVariable.single
             if e == "<HOLE>":
                 return Hole.single
+            # Magic typing for floats.
+            try:
+                float_e = float(e)
+                Primitive(
+                    f"{float_e:g}", baseType("tfloat"), float_e, override_globals=True
+                )
+                return Primitive.GLOBALS[f"{float_e:g}"]
+            except ValueError:
+                raise ParseFailure((s, e))
+
             raise ParseFailure((s, e))
 
         return p(s)
