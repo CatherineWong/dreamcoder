@@ -7,6 +7,11 @@ from dreamcoder.utilities import *
 from time import time
 import math
 
+# Naming
+DEFAULT_NAME = "default_name"
+VERBOSITY_0 = "verbosity_0"  # Least verbose
+VERBOSITY_1 = "verbosity_1"
+
 
 class InferenceFailure(Exception):
     pass
@@ -75,13 +80,9 @@ class Program(object):
         for _ in range(a):
             e = Abstraction(e)
 
-        assert (
-            self.infer() == e.infer()
-        ), "FATAL: uncurry has a bug. %s : %s, but uncurried to %s : %s" % (
-            self,
-            self.infer(),
-            e,
-            e.infer(),
+        assert self.infer() == e.infer(), (
+            "FATAL: uncurry has a bug. %s : %s, but uncurried to %s : %s"
+            % (self, self.infer(), e, e.infer(),)
         )
         return e
 
@@ -398,16 +399,16 @@ class Application(Program):
     def visit(self, visitor, *arguments, **keywords):
         return visitor.application(self, *arguments, **keywords)
 
-    def show(self, isFunction, substitution=None):
+    def show(self, isFunction, substitution=None, alternate_names=None):
         if isFunction:
             return "%s %s" % (
-                self.f.show(True, substitution),
-                self.x.show(False, substitution),
+                self.f.show(True, substitution, alternate_names=alternate_names),
+                self.x.show(False, substitution, alternate_names=alternate_names),
             )
         else:
             return "(%s %s)" % (
-                self.f.show(True, substitution),
-                self.x.show(False, substitution),
+                self.f.show(True, substitution, alternate_names=alternate_names),
+                self.x.show(False, substitution, alternate_names=alternate_names),
             )
 
     def evaluate(self, environment):
@@ -492,7 +493,7 @@ class Index(Program):
     def __init__(self, i):
         self.i = i
 
-    def show(self, isFunction, substitution=None):
+    def show(self, isFunction, substitution=None, alternate_names=None):
         return "$%d" % self.i
 
     def __eq__(self, o):
@@ -631,8 +632,10 @@ class Abstraction(Program):
         self.body.annotateTypes(context, [v] + environment)
         self.annotatedType = arrow(v.applyMutable(context), self.body.annotatedType)
 
-    def show(self, isFunction, substitution=None):
-        return "(lambda %s)" % (self.body.show(False, substitution))
+    def show(self, isFunction, substitution=None, alternate_names=None):
+        return "(lambda %s)" % (
+            self.body.show(False, substitution, alternate_names=alternate_names)
+        )
 
     def evaluate(self, environment):
         return lambda x: self.body.evaluate([x] + environment)
@@ -688,12 +691,15 @@ class Abstraction(Program):
 class Primitive(Program):
     GLOBALS = {}
 
-    def __init__(self, name, ty, value, override_globals=False):
+    def __init__(self, name, ty, value, override_globals=False, alternate_names=None):
         self.tp = ty
         self.name = name
         self.value = value
         if name not in Primitive.GLOBALS or override_globals:
             Primitive.GLOBALS[name] = self
+        self.alternate_names = (
+            {DEFAULT_NAME: name} if alternate_names is None else alternate_names
+        )
 
     @property
     def isPrimitive(self):
@@ -708,8 +714,13 @@ class Primitive(Program):
     def visit(self, visitor, *arguments, **keywords):
         return visitor.primitive(self, *arguments, **keywords)
 
-    def show(self, isFunction, substitution=None):
-        return self.name
+    def show(self, isFunction, substitution=None, alternate_names=None):
+        alternate_names = (
+            alternate_names if alternate_names is not None else DEFAULT_NAME
+        )
+        return self.alternate_names.get(
+            alternate_names, self.alternate_names[DEFAULT_NAME]
+        )
 
     def clone(self):
         return Primitive(self.name, self.tp, self.value)
@@ -788,8 +799,10 @@ class Invented(Program):
     def isInvented(self):
         return True
 
-    def show(self, isFunction, substitution=None):
-        return "#%s" % (self.body.show(False, substitution))
+    def show(self, isFunction, substitution=None, alternate_names=None):
+        return "#%s" % (
+            self.body.show(False, substitution, alternate_names=alternate_names)
+        )
 
     def visit(self, visitor, *arguments, **keywords):
         return visitor.invented(self, *arguments, **keywords)
@@ -866,7 +879,7 @@ class FragmentVariable(Program):
     def __init__(self):
         pass
 
-    def show(self, isFunction, substitution=None):
+    def show(self, isFunction, substitution=None, alternate_names=None):
         return "??"
 
     def __eq__(self, o):
@@ -929,7 +942,7 @@ class Hole(Program):
     def __init__(self):
         pass
 
-    def show(self, isFunction, substitution=None):
+    def show(self, isFunction, substitution=None, alternate_names=None):
         return "<HOLE>"
 
     @property
